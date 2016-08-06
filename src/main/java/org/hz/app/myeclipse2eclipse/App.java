@@ -12,12 +12,16 @@ import java.util.Map;
 /**
  * Hello world!
  */
-public class App {
+public class App extends SimpleFileVisitor<Path> {
 
     private static final Logger LOG = LogManager.getLogger(App.class);
 
     private static Map<String, Class<? extends IFileStrategy>> fileStrategyMap;
 
+    private Context context = new Context();
+
+    private App() {
+    }
 
     static {
         fileStrategyMap = new HashMap<>();
@@ -33,40 +37,37 @@ public class App {
     public static void main(String[] args) throws IOException {
         LOG.info("程序开始");
         LOG.info(fileStrategyMap);
-        Files.walkFileTree(Paths.get("C:\\Users\\qinhaizong\\WXHL\\temp\\"), new SimpleFileVisitor<Path>() {
+        Files.walkFileTree(Paths.get("C:\\Users\\qinhaizong\\WXHL\\temp\\"), new App());
+    }
 
-            private Context context = new Context();
-
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                String name = file.getName(file.getNameCount() - 1).toString();
-                Class<? extends IFileStrategy> aClass = fileStrategyMap.get(name);
-                if (null != aClass) {
-                    try {
-                        context.setStrategy(aClass.newInstance());
-                        context.execute(file);
-                    } catch (InstantiationException e) {
-                        e.printStackTrace();
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    }
-                }
-                return FileVisitResult.CONTINUE;
+    @Override
+    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+        String name = file.getName(file.getNameCount() - 1).toString();
+        Class<? extends IFileStrategy> aClass = fileStrategyMap.get(name);
+        if (null != aClass) {
+            try {
+                context.setStrategy(aClass.newInstance());
+                context.execute(file, false);
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
             }
+        }
+        return FileVisitResult.CONTINUE;
+    }
 
-            @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                String name = dir.getName(dir.getNameCount() - 1).toString();
-                LOG.info("dir name: {}", name);
-                if ("WebRoot".equals(name)) {
-                    Files.move(dir, Paths.get(dir.toRealPath(LinkOption.NOFOLLOW_LINKS).toString().replace("WebRoot", "WebContent")), StandardCopyOption.REPLACE_EXISTING);
-                }
-                if (".myeclipse".equals(name)) {
-                    Files.delete(dir);
-                }
-                return FileVisitResult.CONTINUE;
-            }
-        });
+    @Override
+    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+        String name = dir.getName(dir.getNameCount() - 1).toString();
+        LOG.info("dir name: {}", name);
+        if ("WebRoot".equals(name)) {
+            Files.move(dir, Paths.get(dir.toRealPath(LinkOption.NOFOLLOW_LINKS).toString().replace("WebRoot", "WebContent")), StandardCopyOption.REPLACE_EXISTING);
+        }
+        if (".myeclipse".equals(name)) {
+            Files.delete(dir);
+        }
+        return FileVisitResult.CONTINUE;
     }
 }
 

@@ -12,9 +12,11 @@ import java.nio.file.StandardCopyOption;
 public class PrefsFileStrategy implements IFileStrategy {
 
     @Override
-    public void execute(Path file) {
+    final public void execute(Path file, boolean withBackup) {
         try {
-            Files.move(file, Paths.get(file.toString() + "_bk"), StandardCopyOption.REPLACE_EXISTING);
+            if (withBackup) {
+                Files.move(file, Paths.get(file.toString() + "_bk"), StandardCopyOption.REPLACE_EXISTING);
+            }
             Files.copy(ClassLoader.getSystemResourceAsStream("META-INF/.settings/org.eclipse.jdt.core.prefs"), file, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             e.printStackTrace();

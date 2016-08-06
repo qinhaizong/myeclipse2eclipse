@@ -21,7 +21,7 @@ import java.nio.file.StandardCopyOption;
 public class ProjectFileStrategy implements IFileStrategy {
 
     @Override
-    public void execute(Path file) {
+    final public void execute(Path file, boolean withBackup) {
         String fileName = file.toString();
         try {
             SAXReader reader = new SAXReader();
@@ -30,11 +30,13 @@ public class ProjectFileStrategy implements IFileStrategy {
             String name = node.getStringValue();
             Document srcDocument = reader.read(ClassLoader.getSystemResourceAsStream("META-INF/.project"));
             Node node1 = srcDocument.selectSingleNode("//projectDescription/name");
-            if(node1 instanceof Element){
+            if (node1 instanceof Element) {
                 Element element = (Element) node1;
                 element.setText(name);
             }
-            Files.move(file, Paths.get(file.toString() + "_bk"), StandardCopyOption.REPLACE_EXISTING);
+            if (withBackup) {
+                Files.move(file, Paths.get(file.toString() + "_bk"), StandardCopyOption.REPLACE_EXISTING);
+            }
             XMLWriter writer = new XMLWriter(new FileWriter(fileName), OutputFormat.createPrettyPrint());
             writer.write(srcDocument);
             writer.close();

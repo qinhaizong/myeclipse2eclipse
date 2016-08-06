@@ -10,7 +10,7 @@ import java.nio.file.Path;
 public class MymetadataFileStrategy implements IFileStrategy {
 
     @Override
-    public void execute(Path file) {
+    final public void execute(Path file, boolean withBackup) {
         try {
             Files.delete(file);
         } catch (IOException e) {

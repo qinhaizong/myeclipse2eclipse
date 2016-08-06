@@ -17,12 +17,12 @@ public class Context {
     public Context() {
     }
 
-    public void execute(Path file) {
+    final public void execute(Path file, boolean withBackup) {
         LOG.info("handle file:{}", file);
-        strategy.execute(file);
+        strategy.execute(file, withBackup);
     }
 
-    public void setStrategy(IFileStrategy strategy) {
+    final public void setStrategy(IFileStrategy strategy) {
         this.strategy = strategy;
     }
 }

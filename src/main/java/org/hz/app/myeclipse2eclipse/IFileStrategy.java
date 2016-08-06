@@ -7,5 +7,5 @@ import java.nio.file.Path;
  */
 public interface IFileStrategy {
 
-    void execute(Path file);
+    void execute(Path file, boolean withBackup);
 }

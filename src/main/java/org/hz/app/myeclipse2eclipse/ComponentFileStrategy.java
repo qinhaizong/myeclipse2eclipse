@@ -27,7 +27,7 @@ import java.util.List;
 public class ComponentFileStrategy implements IFileStrategy {
 
     @Override
-    public void execute(Path file) {
+    final public void execute(Path file, boolean withBackup) {
         String fileName = file.toString();
         try {
             SAXReader reader = new SAXReader();
@@ -52,7 +52,9 @@ public class ComponentFileStrategy implements IFileStrategy {
                     }
                 }
             }
-            Files.move(file, Paths.get(file.toString() + "_bk"), StandardCopyOption.REPLACE_EXISTING);
+            if (withBackup) {
+                Files.move(file, Paths.get(file.toString() + "_bk"), StandardCopyOption.REPLACE_EXISTING);
+            }
             XMLWriter writer = new XMLWriter(new FileWriter(fileName), OutputFormat.createPrettyPrint());
             writer.write(srcDocument);
             writer.close();
