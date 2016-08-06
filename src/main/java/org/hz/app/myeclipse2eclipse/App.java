@@ -3,6 +3,8 @@ package org.hz.app.myeclipse2eclipse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -37,7 +39,8 @@ public class App extends SimpleFileVisitor<Path> {
     public static void main(String[] args) throws IOException {
         LOG.info("程序开始");
         LOG.info(fileStrategyMap);
-        Files.walkFileTree(Paths.get("C:\\Users\\qinhaizong\\WXHL\\temp\\"), new App());
+        String source = "C:\\Users\\qinhaizong\\WXHL\\01_JavaEE";
+        Files.walkFileTree(Paths.get(source), new App());
     }
 
     @Override
@@ -60,7 +63,6 @@ public class App extends SimpleFileVisitor<Path> {
     @Override
     public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
         String name = dir.getName(dir.getNameCount() - 1).toString();
-        LOG.info("dir name: {}", name);
         if ("WebRoot".equals(name)) {
             Files.move(dir, Paths.get(dir.toRealPath(LinkOption.NOFOLLOW_LINKS).toString().replace("WebRoot", "WebContent")), StandardCopyOption.REPLACE_EXISTING);
         }
@@ -68,6 +70,12 @@ public class App extends SimpleFileVisitor<Path> {
             Files.delete(dir);
         }
         return FileVisitResult.CONTINUE;
+    }
+
+
+    @Override
+    public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+        return FileVisitResult.SKIP_SUBTREE;
     }
 }
 
