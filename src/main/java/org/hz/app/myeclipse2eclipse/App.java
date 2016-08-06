@@ -2,20 +2,12 @@ package org.hz.app.myeclipse2eclipse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.dom4j.Document;
-import org.dom4j.DocumentException;
-import org.dom4j.Element;
-import org.dom4j.Node;
-import org.dom4j.io.OutputFormat;
-import org.dom4j.io.SAXReader;
-import org.dom4j.io.XMLWriter;
 
-import java.io.*;
-import java.net.URI;
+import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Iterator;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Hello world!
@@ -24,33 +16,57 @@ public class App {
 
     private static final Logger LOG = LogManager.getLogger(App.class);
 
+    private static Map<String, Class<? extends IFileStrategy>> fileStrategyMap;
+
+
+    static {
+        fileStrategyMap = new HashMap<>();
+        fileStrategyMap.put(".mymetadata", MymetadataFileStrategy.class);
+        fileStrategyMap.put(".classpath", ClasspathFileStrategy.class);
+        fileStrategyMap.put(".project", ProjectFileStrategy.class);
+        fileStrategyMap.put(".jsdtscope", JsdtscopeFileStrategy.class);
+        fileStrategyMap.put("org.eclipse.jdt.core.prefs", PrefsFileStrategy.class);
+        fileStrategyMap.put("org.eclipse.wst.common.component", ComponentFileStrategy.class);
+        fileStrategyMap.put("org.eclipse.wst.common.project.facet.core.xml", FacetCoreXmlFileStrategy.class);
+    }
+
     public static void main(String[] args) throws IOException {
         LOG.info("程序开始");
-        Files.walkFileTree(Paths.get("C:\\Users\\qinhaizong\\WXHL\\temp\\day01\\"), new SimpleFileVisitor<Path>() {
+        LOG.info(fileStrategyMap);
+        Files.walkFileTree(Paths.get("C:\\Users\\qinhaizong\\WXHL\\temp\\"), new SimpleFileVisitor<Path>() {
+
+            private Context context = new Context();
+
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                String name = file.getName(file.getNameCount()-1).toString();
-                LOG.info("File:\t{}", name);
-                if (".classpath".equals(name)) {
-                    LOG.info("{}", name);
+                String name = file.getName(file.getNameCount() - 1).toString();
+                Class<? extends IFileStrategy> aClass = fileStrategyMap.get(name);
+                if (null != aClass) {
                     try {
-                        Document document = new SAXReader().read(new FileInputStream(new File(file.toString())));
-                        List<Node> list = document.selectNodes("//classpathentry");
-                        list.stream().filter(node -> node instanceof Element).forEach(node -> {
-                            Element element = (Element) node;
-                            LOG.info(element.attribute("path"));
-                        });
-                        /*XMLWriter writer = new XMLWriter(new FileWriter(".classpath_2"), OutputFormat.createPrettyPrint());
-                        writer.write(document);
-                        writer.close();*/
-                    } catch (DocumentException e) {
+                        context.setStrategy(aClass.newInstance());
+                        context.execute(file);
+                    } catch (InstantiationException e) {
+                        e.printStackTrace();
+                    } catch (IllegalAccessException e) {
                         e.printStackTrace();
                     }
                 }
                 return FileVisitResult.CONTINUE;
             }
-        });
 
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                String name = dir.getName(dir.getNameCount() - 1).toString();
+                LOG.info("dir name: {}", name);
+                if ("WebRoot".equals(name)) {
+                    Files.move(dir, Paths.get(dir.toRealPath(LinkOption.NOFOLLOW_LINKS).toString().replace("WebRoot", "WebContent")), StandardCopyOption.REPLACE_EXISTING);
+                }
+                if (".myeclipse".equals(name)) {
+                    Files.delete(dir);
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
     }
 }
 
